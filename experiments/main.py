@@ -2,6 +2,9 @@
 # Korbinian Poeppel, Maximilian Beck
 from argparse import ArgumentParser
 from typing import Type
+from datetime import datetime 
+
+import os 
 
 import torch
 import torch.optim as optim
@@ -17,6 +20,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from xlstm.xlstm_lm_model import xLSTMLMModel, xLSTMLMModelConfig
+from model.config.mamba import MambaConfig 
+from model.mamba import MambaLM
 
 dataset_registry: dict[str, Type[DataGen]] = {
     "form_language": FormLangDatasetGenerator
@@ -47,8 +52,11 @@ def main(cfg: DictConfig):
     }
     train_metrics = dataset.train_metrics.to(device=cfg.training.device)
     val_metrics = dataset.validation_metrics.to(device=cfg.training.device)
-
-    model = xLSTMLMModel(from_dict(xLSTMLMModelConfig, OmegaConf.to_container(cfg.model))).to(
+    if cfg.model.name == 'mamba':
+        model = MambaLM(from_dict(MambaConfig, OmegaConf.to_container(cfg.model)), cfg.dataset.kwargs.vocab_size,
+                        cfg.model.d_model, cfg.model.positive_and_negative).to(device=cfg.training.device)
+    else:
+        model = xLSTMLMModel(from_dict(xLSTMLMModelConfig, OmegaConf.to_container(cfg.model))).to(
         device=cfg.training.device
     )
     model.reset_parameters()
@@ -100,15 +108,17 @@ def main(cfg: DictConfig):
                 loss.backward()
                 optimizer.step()
                 lr_scheduler.step()
-                running_loss = running_loss * step / (step + 1) + loss.item() * 1 / (step + 1)
+                running_loss = running_loss +  loss.item() 
             step += 1
             train_metrics.update(outputs, labels)
 
             if step % cfg.training.val_every_step == 0:
                 print(
-                    f"\nStep [{step+1}/{cfg.training.num_steps}] (Epoch: {epoch}), Loss: {running_loss:.4f},"
+                    f"\nStep [{step+1}/{cfg.training.num_steps}] (Epoch: {epoch}), Loss: {running_loss / cfg.training.val_every_step:.4f},"
                     f" Metrics: {train_metrics.compute()}"
                 )
+                running_loss = 0.0
+                train_metrics.reset()
                 # Validation loop
                 for vl_name, val_loader in val_loaders.items():
                     model.eval()
