@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 from mamba_ssm.modules.mamba_simple import Mamba 
-from config.mamba import MambaConfig
+from model.config.mamba import MambaConfig
 
 class ResidualMamba(nn.Module):
     def __init__(self, config):
