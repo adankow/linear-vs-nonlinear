@@ -20,8 +20,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from xlstm.xlstm_lm_model import xLSTMLMModel, xLSTMLMModelConfig
-from model.config.mamba import MambaConfig 
-from model.mamba import MambaLM
+from experiments.model.config.mamba import MambaConfig 
+from experiments.model.mamba import MambaLM
 
 dataset_registry: dict[str, Type[DataGen]] = {
     "form_language": FormLangDatasetGenerator
@@ -58,12 +58,20 @@ def main(cfg: DictConfig):
     else:
         model = xLSTMLMModel(from_dict(xLSTMLMModelConfig, OmegaConf.to_container(cfg.model))).to(
         device=cfg.training.device
-    )
-    model.reset_parameters()
+        )
+        
+    if hasattr(model, 'reset_parameters'):
+        model.reset_parameters()
 
     model = model.to(dtype=torch_dtype_map[cfg.training.weight_precision])
 
-    optim_groups = model._create_weight_decay_optim_groups()
+    if hasattr(model, '_create_weight_decay_optim_groups'):
+        optim_groups = model._create_weight_decay_optim_groups()
+    else:
+        optim_groups = []
+        optim_groups.append(
+            [param for name, param in model.named_parameters() if not hasattr(param, '_no_weight_decay')])
+        optim_groups.append([param for name, param in model.named_parameters() if hasattr(param, '_no_weight_decay')])
 
     optimizer = optim.AdamW(
         (

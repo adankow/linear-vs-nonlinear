@@ -5,19 +5,25 @@ import torch
 
 @dataclass
 class MambaConfig:
-    d_model: int  #  D
-    n_layers: int
-    dt_rank: Union[int, str] = 'auto'
-    d_state: int = 16  #  N in paper/comments
-    expand_factor: int = 2  #  E in paper/comments
-    d_conv: int = 1
 
-    dt_min: float = 0.001
-    dt_max: float = 0.1
-    dt_init: str = "random"  #  "random" or "constant"
-    dt_scale: float = 1.0
-    dt_init_floor = 1e-4
-    positive_and_negative: bool = True
+    d_model: int 
+    n_layers : int
+    d_state=16
+    d_conv=4
+    expand=2
+    dt_rank="auto"
+    dt_min=0.001
+    dt_max=0.1
+    dt_init="random"
+    dt_scale=1.0
+    dt_init_floor=1e-4
+    conv_bias=True
+    bias=False
+    use_fast_path=True  # Fused kernel options
+    layer_idx=None
+    device=None
+    dtype=None
+
 
     rms_norm_eps: float = 1e-5
     base_std: float = 0.02
@@ -28,6 +34,3 @@ class MambaConfig:
 
     mup: bool = False
     mup_base_width: float = 128  # width=d_model
-
-    pscan: bool = True  #  use parallel scan mode or sequential mode when training
-    use_cuda: bool = True  # use official CUDA implementation when training (not compatible with (b)float16)
