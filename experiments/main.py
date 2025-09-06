@@ -54,7 +54,7 @@ def main(cfg: DictConfig):
     val_metrics = dataset.validation_metrics.to(device=cfg.training.device)
     if cfg.model.name == 'mamba':
         model = MambaLM(from_dict(MambaConfig, OmegaConf.to_container(cfg.model)), cfg.dataset.kwargs.vocab_size,
-                        cfg.model.d_model, cfg.model.positive_and_negative).to(device=cfg.training.device)
+                        cfg.model.d_model).to(device=cfg.training.device)
     else:
         model = xLSTMLMModel(from_dict(xLSTMLMModelConfig, OmegaConf.to_container(cfg.model))).to(
         device=cfg.training.device
