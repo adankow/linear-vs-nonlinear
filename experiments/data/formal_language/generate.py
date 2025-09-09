@@ -8,12 +8,14 @@ from .tasks.parity import parity
 from .tasks.cycle_navigation import cycle_navigation
 from .tasks.even_pairs import even_pairs
 from .tasks.modular_arithmetic import modular_arithmetic
+from .tasks.flipflop import flipflop
 
 GEN_FUNCS = {
     "parity": parity,
     "cycle_navigation": cycle_navigation,
     "even_pairs": even_pairs,
     "modular_arithmetic": modular_arithmetic,
+    "flipflop": flipflop,
 }
 
 TOKEN_SYNTH = [
@@ -21,6 +23,7 @@ TOKEN_SYNTH = [
     "cycle_navigation",
     "even_pairs",
     "modular_arithmetic",
+    "flipflop", 
 ]
 
 GEN_FUNCS_RES_DTYPE = {synth_lang_type: np.int32 for synth_lang_type in TOKEN_SYNTH}
