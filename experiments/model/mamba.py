@@ -384,7 +384,7 @@ class MambaLM(nn.Module):
         if hasattr(config, "positive_and_negative") and config["positive_and_negative"]:
             self.layers = nn.Sequential(*[ResidualNegativeMamba(config) for _ in range(config.n_layers)])
         else:
-            self.layers = nn.Sequential(*[ResidualNegativeMamba(config) for _ in range(config.n_layers)]) 
+            self.layers = nn.Sequential(*[ResidualMamba(config) for _ in range(config.n_layers)]) 
         self.token_embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embeding_dim)
 
         self.lm_head = nn.Linear(

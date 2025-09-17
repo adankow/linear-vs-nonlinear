@@ -23,6 +23,9 @@ from xlstm.xlstm_lm_model import xLSTMLMModel, xLSTMLMModelConfig
 from experiments.model.config.mamba import MambaConfig 
 from experiments.model.mamba import MambaLM
 
+import pandas as pd
+import numpy as np
+
 dataset_registry: dict[str, Type[DataGen]] = {
     "form_language": FormLangDatasetGenerator
 }
@@ -92,6 +95,12 @@ def main(cfg: DictConfig):
     step = 0
     epoch = 1
     running_loss = 0.0
+    
+    curve = {'train_acc': [],
+             'train_loss': [],
+             'val_acc': [],
+             'val_loss': []}
+    
     while step < cfg.training.num_steps:
         monitoring = tqdm(train_loader, total=0, initial=0)
         for inputs, labels in monitoring:
@@ -125,6 +134,8 @@ def main(cfg: DictConfig):
                     f"\nStep [{step+1}/{cfg.training.num_steps}] (Epoch: {epoch}), Loss: {running_loss / cfg.training.val_every_step:.4f},"
                     f" Metrics: {train_metrics.compute()}"
                 )
+                curve['train_acc'].append(train_metrics.compute()['SequenceAccuracy'])
+                curve['train_loss'].append(running_loss)
                 running_loss = 0.0
                 train_metrics.reset()
                 # Validation loop
@@ -153,10 +164,17 @@ def main(cfg: DictConfig):
                             f"Validation[{vl_name}] Loss: {val_loss/len(val_loader):.4f},"
                             f" Metrics: {val_metrics.compute()}"
                         )
+                        curve['val_acc'].append(val_metrics.compute()['SequenceAccuracy'])
+                        curve['val_loss'].append(val_loss)
 
             if step >= cfg.training.num_steps:
                 break
         epoch += 1
+
+    curve_np = {key: np.array(list(map(lambda t: t.cpu().detach().numpy(), ts))) for key, ts in curve.items()}
+    print(curve_np)
+    curve_pd = pd.DataFrame(curve_np)    
+    curve_pd.to_csv(cfg['config-name'], index=False)
 
 
 if __name__ == "__main__":
@@ -169,5 +187,6 @@ if __name__ == "__main__":
     with open(args.config, "r", encoding="utf8") as fp:
         config_yaml = fp.read()
     cfg = OmegaConf.create(config_yaml)
+    cfg['config-name'] = vars(args)['config']
     OmegaConf.resolve(cfg)
     main(cfg)
