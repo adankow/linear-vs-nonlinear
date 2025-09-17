@@ -171,10 +171,11 @@ def main(cfg: DictConfig):
                 break
         epoch += 1
 
-    curve_np = {key: np.array(list(map(lambda t: t.cpu().detach().numpy(), ts))) for key, ts in curve.items()}
-    print(curve_np)
+    curve_np = {key: torch.tensor(ts).cpu().detach().numpy() for key, ts in curve.items()}
     curve_pd = pd.DataFrame(curve_np)    
-    curve_pd.to_csv(cfg['config-name'], index=False)
+    experiment_path_ls = cfg['config-name'].split('/')[:-1]
+    experiment_path = '/'.join(experiment_path_ls)
+    curve_pd.to_csv(f'{experiment_path}/curve.csv', index=False)
 
 
 if __name__ == "__main__":
